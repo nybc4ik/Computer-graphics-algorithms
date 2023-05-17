@@ -1,119 +1,148 @@
-# This is a sample Python script.
-
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-
+import pygame
+import sys
 from OpenGL.GL import *
-import glfw
-import math
+from OpenGL.GLU import *
+x=0
+y=0
+vx=0.001
+vy=-0.002
+vertices = (
+    # x  y  z
+    (1, -1, -1),
+    (1, 1, -1),
+    (-1, 1, -1),
+    (-1, -1, -1),
+    (1, -1, 1),
+    (1, 1, 1),
+    (-1, -1, 1),
+    (-1, 1, 1)
+)
 
-angle = 0.0
-ang = 0.0
-seen = 0
+edges = (
+    (0, 1),
+    (0, 3),
+    (0, 4),
+    (2, 1),
+    (2, 3),
+    (2, 7),
+    (6, 3),
+    (6, 4),
+    (6, 7),
+    (5, 1),
+    (5, 4),
+    (5, 7)
+)
 
 
-def main():
-    if not glfw.init():
-        return
-    window = glfw.create_window(640, 640, "Lab3", None, None)
-    if not window:
-        glfw.terminate()
-        return
-    glfw.make_context_current(window)
-    glfw.set_key_callback(window, key_callback)
-    while not glfw.window_should_close(window):
-        display(window)
-    glfw.destroy_window(window)
-    glfw.terminate()
+def loadTexture():
+    textureSurface = pygame.image.load('browser_NjYzkBq2nq.png')
+    textureData = pygame.image.tostring(textureSurface, "RGBA", 1)
+    width = textureSurface.get_width()
+    height = textureSurface.get_height()
+
+    glEnable(GL_TEXTURE_2D)
+    texid = glGenTextures(1)
+
+    glBindTexture(GL_TEXTURE_2D, texid)
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height,
+                 0, GL_RGBA, GL_UNSIGNED_BYTE, textureData)
+
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+
+    return texid
 
 
-def Prizm(n, ang):
-    g = 360 / n
-    angle = math.radians(g)
-    vertex = [0] * (2 * n * 3)
-    # вершины
-    for i in range(n):
-        vertex[i * 3] = math.cos(angle * i) * 0.5
-        vertex[i * 3 + 1] = math.sin(angle * i) * 0.5
-        vertex[i * 3 + 2] = -0.5
-    for i in range(n):
-        vertex[(i + n) * 3] = math.cos(angle * i + ang) * 0.25
-        vertex[(i + n) * 3 + 1] = math.sin(angle * i + ang) * 0.25
-        vertex[(i + n) * 3 + 2] = 0.5
-    # грани
-    for i in range(n):
+def draw_cube(lines=False):
+    global x
+    global vx
+    global vy
+    global y
+    if lines:
         glBegin(GL_LINES)
-        tup = (vertex[i * 3], vertex[i * 3 + 1], vertex[i * 3 + 2])
-        glVertex3fv(tup)
-        tup = (vertex[(i + n) * 3], vertex[(i + n) * 3 + 1], vertex[(i + n) * 3 + 2])
-        glVertex3fv(tup)
+        for edge in edges:
+            glColor3fv((1, 1, 1))
+            for vertex in edge:
+                glVertex3fv(vertices[vertex])
         glEnd()
-    for i in range(n - 1):
-        glBegin(GL_LINES)
-        tup = (vertex[i * 3], vertex[i * 3 + 1], vertex[i * 3 + 2])
-        glVertex3fv(tup)
-        tup = (vertex[(i + 1) * 3], vertex[(i + 1) * 3 + 1], vertex[(i + 1) * 3 + 2])
-        glVertex3fv(tup)
+    else:
+        glBegin(GL_QUADS)
+        glTexCoord2f(0.0, 0.0)
+        glVertex3f(x-1.0, y-1.0,  1.0)
+        glTexCoord2f(1.0, 0.0)
+        glVertex3f(x+1.0, y-1.0,  1.0)
+        glTexCoord2f(1.0, 1.0)
+        glVertex3f(x+1.0,  y+1.0,  1.0)
+        glTexCoord2f(0.0, 1.0)
+        glVertex3f(x-1.0,  y+1.0,  1.0)
+        glTexCoord2f(1.0, 0.0)
+        glVertex3f(x-1.0, y-1.0, -1.0)
+        glTexCoord2f(1.0, 1.0)
+        glVertex3f(x-1.0,  y+1.0, -1.0)
+        glTexCoord2f(0.0, 1.0)
+        glVertex3f(x+1.0, y+1.0, -1.0)
+        glTexCoord2f(0.0, 0.0)
+        glVertex3f(x+1.0, y-1.0, -1.0)
+        glTexCoord2f(0.0, 1.0)
+        glVertex3f(x-1.0,  y+1.0, -1.0)
+        glTexCoord2f(0.0, 0.0)
+        glVertex3f(x-1.0,  y+1.0,  1.0)
+        glTexCoord2f(1.0, 0.0)
+        glVertex3f(x+1.0,  y+1.0,  1.0)
+        glTexCoord2f(1.0, 1.0)
+        glVertex3f(x+1.0,  y+1.0, -1.0)
+        glTexCoord2f(1.0, 1.0)
+        glVertex3f(x-1.0, y-1.0, -1.0)
+        glTexCoord2f(0.0, 1.0)
+        glVertex3f(x+1.0, y-1.0, -1.0)
+        glTexCoord2f(0.0, 0.0)
+        glVertex3f(x+1.0, y-1.0,  1.0)
+        glTexCoord2f(1.0, 0.0)
+        glVertex3f(x-1.0, y-1.0,  1.0)
+        glTexCoord2f(1.0, 0.0)
+        glVertex3f(x+1.0, y-1.0, -1.0)
+        glTexCoord2f(1.0, 1.0)
+        glVertex3f(x+1.0,  y+1.0, -1.0)
+        glTexCoord2f(0.0, 1.0)
+        glVertex3f(x+1.0,  y+1.0,  1.0)
+        glTexCoord2f(0.0, 0.0)
+        glVertex3f(x+1.0, y-1.0,  1.0)
+        glTexCoord2f(0.0, 0.0)
+        glVertex3f(x-1.0, y-1.0, -1.0)
+        glTexCoord2f(1.0, 0.0)
+        glVertex3f(x-1.0, y-1.0,  1.0)
+        glTexCoord2f(1.0, 1.0)
+        glVertex3f(x-1.0,  y+1.0,  1.0)
+        glTexCoord2f(0.0, 1.0)
+        glVertex3f(x-1.0,  y+1.0, -1.0)
         glEnd()
-    for i in range(n - 1):
-        glBegin(GL_LINES)
-        tup = (vertex[(i + n + 1) * 3], vertex[(i + n + 1) * 3 + 1], vertex[(i + n + 1) * 3 + 2])
-        glVertex3fv(tup)
-        tup = (vertex[(i + n) * 3], vertex[(i + n) * 3 + 1], vertex[(i + n) * 3 + 2])
-        glVertex3fv(tup)
-        glEnd()
-    glBegin(GL_LINES)
-    tup = (vertex[(n - 1) * 3], vertex[(n - 1) * 3 + 1], vertex[(n - 1) * 3 + 2])
-    glVertex3fv(tup)
-    tup = (vertex[0], vertex[1], vertex[2])
-    glVertex3fv(tup)
-    tup = (vertex[(2 * n - 1) * 3], vertex[(2 * n - 1) * 3 + 1], vertex[(2 * n - 1) * 3 + 2])
-    glVertex3fv(tup)
-    tup = (vertex[(n) * 3], vertex[(n) * 3 + 1], vertex[(n) * 3 + 2])
-    glVertex3fv(tup)
-    glEnd()
+    x+=vx
+    y+=vy
+    if x>=1 or x<=-1:
+        vx=-vx
+    if y>=1 or y<=-1:
+        vy=-vy
+pygame.init()
+display = (1920, 1080)
+display = (1920, 1080)
+screen = pygame.display.set_mode(
+    display, pygame.DOUBLEBUF | pygame.OPENGL | pygame.OPENGLBLIT)
 
+loadTexture()
 
-def display(window):
-    global seen
-    global angle
-    global angle1
-    glClear(GL_COLOR_BUFFER_BIT)
-    glLoadIdentity()
+gluPerspective(45, display[0] / display[1], 0.1, 50.0)
+glTranslatef(0.0, 0.0, -5)
 
-    glClearColor(1.0, 1.0, 1.0, 1.0)
-    glPushMatrix()
-    glRotatef(angle, 1, 1, 1)
+while True:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
 
-    glColor3f(1.0, 0.5, 1.0)
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-    Prizm(4, ang)
+    draw_cube(lines=False)
 
-    # Cube(vertices, edges)
-    glPopMatrix()
-    glfw.swap_buffers(window)
-    glfw.poll_events()
-
-
-def key_callback(window, key, scancode, action, mods):
-    global seen
-    global angle
-    global ang
-    if action == glfw.PRESS:
-        if key == glfw.KEY_RIGHT:
-            angle += 10
-        if key == 263:  # glfw.KEY_LEFT
-            angle -= 1
-        if key == glfw.KEY_SPACE:
-            if seen == 0:
-                seen = 1
-            else:
-                seen = 0
-        if key == glfw.KEY_UP:
-            ang += 1
-        if key == glfw.KEY_DOWN:
-            ang -= 1
-
-
-main()
-
+    pygame.display.flip()
